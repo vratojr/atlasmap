@@ -18,10 +18,11 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.atlasmap.api.AtlasSession;
-import io.atlasmap.v2.Expression;
+import io.atlasmap.v2.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,20 +37,6 @@ import io.atlasmap.spi.AtlasConversionService;
 import io.atlasmap.spi.AtlasFieldActionInfo;
 import io.atlasmap.spi.AtlasFieldActionService;
 import io.atlasmap.spi.AtlasInternalSession;
-import io.atlasmap.v2.Action;
-import io.atlasmap.v2.ActionDetail;
-import io.atlasmap.v2.ActionParameter;
-import io.atlasmap.v2.ActionParameters;
-import io.atlasmap.v2.ActionResolver;
-import io.atlasmap.v2.AtlasModelFactory;
-import io.atlasmap.v2.AuditStatus;
-import io.atlasmap.v2.CollectionType;
-import io.atlasmap.v2.CustomAction;
-import io.atlasmap.v2.Field;
-import io.atlasmap.v2.FieldGroup;
-import io.atlasmap.v2.FieldType;
-import io.atlasmap.v2.Multiplicity;
-import io.atlasmap.v2.SimpleField;
 
 public class DefaultAtlasFieldActionService implements AtlasFieldActionService {
 
@@ -655,7 +642,8 @@ public class DefaultAtlasFieldActionService implements AtlasFieldActionService {
 
     @Override
     public Field processActions(AtlasInternalSession session, Field field) throws AtlasException {
-        ArrayList<Action> actions = field.getActions();
+        //Exclude the FieldContainerActions since there are no processors associated
+        List<Action> actions = field.getActions().stream().filter(a->!(a instanceof FieldContainerAction)).collect(Collectors.toList());
         FieldType targetType = field.getFieldType();
 
         if (actions == null || actions == null || actions.isEmpty()) {

@@ -275,12 +275,20 @@ public class AtlasPath {
         return collectionSegments;
     }
 
-    public SegmentContext setVacantCollectionIndex(Integer collectionIndex) {
+    public int getFirstVacantCollectionSegmentIndex(){
         for (int i = 0; i < this.segmentContexts.size(); i++) {
             SegmentContext sc = segmentContexts.get(i);
             if (sc.getCollectionType() != CollectionType.NONE && sc.getCollectionIndex() == null) {
-                return setCollectionIndex(i, collectionIndex);
+                return i;
             }
+        }
+        return -1;
+    }
+
+    public SegmentContext setVacantCollectionIndex(Integer collectionIndex) {
+	    int index = getFirstVacantCollectionSegmentIndex();
+	    if(index >=0){
+	        return setCollectionIndex(index, collectionIndex);
         }
         throw new IllegalArgumentException("No Vacant index on collection segments in the path " + this.toString());
     }

@@ -136,4 +136,46 @@ public class JsonJsonCollectionConversionTest extends AtlasMappingBaseTest {
         String output = "{\"contact\":[{\"name\":\"name9\"}]}";
         assertEquals(output, object);
     }
+
+    @Test
+    /// Test a single collection
+    public void testProcessCollectionFromNonCollectionByIndex() throws Exception {
+        AtlasContext context = atlasContextFactory.createContext(
+            new File("src/test/resources/jsonToJson/mapping/collections/atlasmapping-collection-from-noncollection-by-index.json").toURI());
+
+        // contact.firstName -> contact<1>.name
+
+        String input = "{ \"contacts\": { \"firstName\": \"name9\" } }";
+        AtlasSession session = context.createSession();
+        session.setDefaultSourceDocument(input);
+        context.process(session);
+
+        Object object = session.getDefaultTargetDocument();
+        assertNotNull(object);
+        assertTrue(object instanceof String);
+
+        String output = "{\"contacts\":[{\"name\":null},{\"name\":\"name9\"}]}";
+        assertEquals(output, object);
+    }
+
+    @Test
+    /// Test mapping a collection into a standard collection
+    public void testProcessNestedCollectionFromNonCollectionByIndex() throws Exception {
+        AtlasContext context = atlasContextFactory.createContext(
+            new File("src/test/resources/jsonToJson/mapping/collections/atlasmapping-collection-from-noncollection-by-index-deep.json").toURI());
+
+        // contact.firstName -> contact<1>.name
+
+        String input = "{ \"contacts\": { \"firstName\": \"name9\" } }";
+        AtlasSession session = context.createSession();
+        session.setDefaultSourceDocument(input);
+        context.process(session);
+
+        Object object = session.getDefaultTargetDocument();
+        assertNotNull(object);
+        assertTrue(object instanceof String);
+
+        String output = "{\"contacts\":[\"{foreigners\":[{\"name\":null},{\"name\":\"name9\"}]}]}";
+        assertEquals(output, object);
+    }
 }

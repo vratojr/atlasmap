@@ -15,8 +15,12 @@
  */
 package io.atlasmap.json.module;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
+import io.atlasmap.v2.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,12 +35,6 @@ import io.atlasmap.json.v2.AtlasJsonModelFactory;
 import io.atlasmap.json.v2.JsonField;
 import io.atlasmap.spi.AtlasInternalSession;
 import io.atlasmap.spi.AtlasModuleDetail;
-import io.atlasmap.v2.AtlasModelFactory;
-import io.atlasmap.v2.AuditStatus;
-import io.atlasmap.v2.Field;
-import io.atlasmap.v2.FieldGroup;
-import io.atlasmap.v2.Validation;
-import io.atlasmap.v2.Validations;
 
 @AtlasModuleDetail(name = "JsonModule", uri = "atlas:json", modes = { "SOURCE", "TARGET" }, dataFormats = {
         "json" }, configPackages = { "io.atlasmap.json.v2" })
@@ -171,14 +169,7 @@ public class JsonModule extends BaseAtlasModule {
             session.head().setSourceField(sourceField);
             session.head().setTargetField(targetFieldGroup);
         } else {
-            JsonField targetSubField = new JsonField();
-            AtlasJsonModelFactory.copyField(targetField, targetSubField, false);
-            path.setVacantCollectionIndex(0);
-            targetSubField.setPath(path.toString());
-            targetFieldGroup.getField().add(targetSubField);
-            session.head().setTargetField(targetSubField);
-            super.populateTargetField(session);
-            session.head().setTargetField(targetFieldGroup);
+            addTargetCollectionElements(targetField,path,targetFieldGroup,session);
         }
 
         if (LOG.isDebugEnabled()) {
@@ -189,6 +180,54 @@ public class JsonModule extends BaseAtlasModule {
                     targetField.getValue());
         }
     }
+
+    private void addTargetCollectionElements(Field targetField, AtlasPath path, FieldGroup targetFieldGroup, AtlasInternalSession session) throws AtlasException {
+        // We'll have to create as many elements to fill target container to account for all the MapToIndex mappings
+        List<MapToIndex> maps = new ArrayList<>();
+        if (session.head().getTargetField().getActions() != null) {
+            maps = targetField.getActions().stream()
+                .filter(MapToIndex.class::isInstance)
+                .map(MapToIndex.class::cast)
+                .sorted((a, b) -> a.getIndex().compareTo(b.getIndex()))
+                .collect(Collectors.toList());
+        }
+        // Add the first element
+        int segmentIndex = path.getFirstVacantCollectionSegmentIndex();
+        createTargetCollectionFieldAtIndex(targetField, path, targetFieldGroup, session, segmentIndex, 0);
+        if (maps.size() == 0 || maps.get(0).getIndex() == 0) {
+            //Populate only the elements that are target of a MapToIndexMapping or there are no mapping, so it's a default collection mapping
+            super.populateTargetField(session);
+        }
+
+        int currentlyPopulatedIndex = 1;
+        for (MapToIndex map : maps) {
+            // Create default placeholder for non-mapped fields
+            for (; currentlyPopulatedIndex < map.getIndex(); currentlyPopulatedIndex++) {
+                createTargetCollectionFieldAtIndex(targetField, path, targetFieldGroup, session, segmentIndex, currentlyPopulatedIndex);
+            }
+            createTargetCollectionFieldAtIndex(targetField, path, targetFieldGroup, session, segmentIndex, currentlyPopulatedIndex);
+            //Populate only the elements that are target of a MapToIndexMapping
+            super.populateTargetField(session);
+        }
+
+        session.head().setTargetField(targetFieldGroup);
+    }
+
+    /*
+     * Creates a new field in the target collection. The field will be placed at index elementIndex of the given path segment (segmentIndex).
+     * For example for a path /A<>/B<>/C, passing segmentIndex 2 and elementIndex 1 will create a path of /A<>/B<1>/C.
+     * The field gets initialized with default values.
+     */
+    private void createTargetCollectionFieldAtIndex(Field targetField,AtlasPath path,FieldGroup targetFieldGroup,AtlasInternalSession session,int segmentIndex,int elementIndex ){
+        JsonField targetSubField = new JsonField();
+        AtlasJsonModelFactory.copyField(targetField, targetSubField, false);
+        // Override the path with the correct index
+        path.setCollectionIndex(segmentIndex, elementIndex);
+        targetSubField.setPath(path.toString());
+        targetFieldGroup.getField().add(targetSubField);
+        session.head().setTargetField(targetSubField);
+    }
+
 
     public void writeTargetValue(AtlasInternalSession session) throws AtlasException {
         JsonFieldWriter writer = session.getFieldWriter(getDocId(), JsonFieldWriter.class);
