@@ -150,7 +150,7 @@ public class AtlasPath {
         this.segmentContexts = parse(path);
     }
 
-    protected AtlasPath(List<SegmentContext> segments) {
+    public AtlasPath(List<SegmentContext> segments) {
         this.segmentContexts = segments;
         this.originalPath = getSegmentPath(segments.get(segments.size() - 1));
     }

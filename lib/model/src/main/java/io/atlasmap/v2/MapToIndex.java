@@ -12,6 +12,14 @@ public class MapToIndex extends FieldContainerAction implements Serializable {
 
     protected String collectionName;
 
+    public MapToIndex(Integer index, String collectionName) {
+        this.index = index;
+        this.collectionName = collectionName;
+    }
+
+    public MapToIndex() {
+    }
+
     /**
      * Gets the value of the index property.
      *

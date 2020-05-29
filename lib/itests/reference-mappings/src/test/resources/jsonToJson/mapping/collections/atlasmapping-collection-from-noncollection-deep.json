@@ -20,18 +20,13 @@
             "mappingType" : "MAP",
             "inputField" : [ {
               "jsonType" : "io.atlasmap.json.v2.JsonField",
-              "path" : "/contacts/firstName",
+              "path" : "/contact/firstName",
               "fieldType" : "STRING",
               "name" : "firstName"
             } ],
             "outputField" : [ {
               "jsonType" : "io.atlasmap.json.v2.JsonField",
-              "actions" : [ {
-                "index" : 1,
-                "collectionName": "contact",
-                "@type" : "MapToIndex"
-              } ],
-              "path" : "/contacts<>/name",
+              "path" : "/contact<>/foreigner<>/name",
               "fieldType" : "STRING",
               "name" : "name"
             } ]
