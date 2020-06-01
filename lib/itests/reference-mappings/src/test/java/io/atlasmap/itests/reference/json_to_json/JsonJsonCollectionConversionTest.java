@@ -25,10 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.sun.xml.xsom.impl.scd.Iterators;
-import io.atlasmap.v2.Action;
-import io.atlasmap.v2.Collection;
-import io.atlasmap.v2.MapToIndex;
-import io.atlasmap.v2.Mapping;
+import io.atlasmap.v2.*;
 import org.junit.Test;
 
 import io.atlasmap.api.AtlasContext;
@@ -262,9 +259,33 @@ public class JsonJsonCollectionConversionTest extends AtlasMappingBaseTest {
 //        assertEquals(output, object);
 //    }
 
-    private void addMappings(AtlasSession session,MapToIndex... mappings){
+
+    @Test
+    public void testProcessNonCollectionFromCollectionByIndex() throws Exception {
+        AtlasContext context = atlasContextFactory.createContext(
+            new File("src/test/resources/jsonToJson/atlasmapping-noncollection-from-collection.json").toURI());
+
+        String input = "{ \"contact\": [{ \"name\": \"name0\" },{ \"name\": \"name1\" },{ \"name\": \"name2\" }] }";
+        AtlasSession session = context.createSession();
+
+        ArrayList<Action> actions = new ArrayList<>();
+        addMappings(session,new MapFromIndex(1,"contact"));
+        // contact<1>/name -> contact<1>.name
+
+        session.setDefaultSourceDocument(input);
+        context.process(session);
+
+        Object object = session.getDefaultTargetDocument();
+        assertNotNull(object);
+        assertTrue(object instanceof String);
+
+        String output = "{\"contact\":{\"firstName\":\"name1\"}}]}";
+        assertEquals(output, object);
+    }
+
+    private void addMappings(AtlasSession session,Action... mappings){
         ArrayList<Action> l = new ArrayList<>();
-        for(MapToIndex m : mappings){
+        for(Action m : mappings){
             l.add(m);
         }
         ((Mapping)((Collection)session.getMapping().getMappings().getMapping().get(0)).getMappings().getMapping().get(0)).getOutputField().get(0).setActions(l);
