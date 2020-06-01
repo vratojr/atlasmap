@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import java.io.Serializable;
 
-public class MapToIndex extends FieldContainerAction implements Serializable {
+public class MapToIndex extends CollectionAction implements Serializable {
 
     private final static long serialVersionUID = 1L;
 

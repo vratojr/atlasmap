@@ -17,8 +17,6 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.atlasmap.api.AtlasSession;
@@ -643,7 +641,7 @@ public class DefaultAtlasFieldActionService implements AtlasFieldActionService {
     @Override
     public Field processActions(AtlasInternalSession session, Field field) throws AtlasException {
         //Exclude the FieldContainerActions since there are no processors associated
-        List<Action> actions = field.getActions().stream().filter(a->!(a instanceof FieldContainerAction)).collect(Collectors.toList());
+        List<Action> actions = field.getActions().stream().filter(a->!(a instanceof CollectionAction)).collect(Collectors.toList());
         FieldType targetType = field.getFieldType();
 
         if (actions == null || actions == null || actions.isEmpty()) {

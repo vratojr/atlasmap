@@ -16,7 +16,6 @@
 package io.atlasmap.json.module;
 
 import java.util.*;
-import java.util.stream.IntStream;
 
 import io.atlasmap.v2.*;
 import org.slf4j.Logger;
@@ -35,7 +34,6 @@ import io.atlasmap.spi.AtlasInternalSession;
 import io.atlasmap.spi.AtlasModuleDetail;
 
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
 
 @AtlasModuleDetail(name = "JsonModule", uri = "atlas:json", modes = {"SOURCE", "TARGET"}, dataFormats = {
     "json"}, configPackages = {"io.atlasmap.json.v2"})
@@ -182,145 +180,18 @@ public class JsonModule extends BaseAtlasModule {
         }
     }
 
-    class ActionGroup {
-        private List<MapToIndex> collectionActions = new ArrayList<>();
-        private List<Action> actions = new ArrayList<>();
-        private AtlasPath pathTemplate;
-
-        public ActionGroup(AtlasPath pathTemplate){
-            this.pathTemplate = new AtlasPath(pathTemplate.toString());
-        }
-
-        public List<MapToIndex> getCollectionActions() {
-            return collectionActions;
-        }
-
-        public List<Action> getActions() {
-            return actions;
-        }
-
-        // For a given segment, return the collection index to which the group maps to. Eg if the group maps to /contacts<0> it will return 0 for argument "contacts"
-        public Integer getTargetCollectionIndexBySegment(String name){
-            List<AtlasPath.SegmentContext> segments =  pathTemplate.getSegments(true);
-            for(AtlasPath.SegmentContext segment : segments){
-                MapToIndex indexAction = collectionActions.stream().filter(n->n.getCollectionName().equalsIgnoreCase(segment.getName())).findFirst().orElse(null);
-                if(indexAction == null){
-                    return 0;
-                }
-                else{
-                    return indexAction.getIndex();
-                }
-            }
-            return -1;
-        }
-
-        // Return the final path to which this group refers to
-        public String toPath() {
-            List<AtlasPath.SegmentContext> segments =  pathTemplate.getSegments(true);
-            for(AtlasPath.SegmentContext segment : segments){
-                int segmentIndex = segments.indexOf(segment);
-                MapToIndex indexAction = collectionActions.stream().filter(n->n.getCollectionName().equalsIgnoreCase(segment.getName())).findFirst().orElse(null);
-                if(indexAction == null){
-                    pathTemplate.setCollectionIndex(segmentIndex,0);
-                }
-                else{
-                    pathTemplate.setCollectionIndex(segmentIndex,indexAction.getIndex());
-                }
-            }
-            return pathTemplate.toString();
-        }
-
-    }
-
-    private List<ActionGroup> extractActionGroups(AtlasPath path, List<Action> actions) {
-        List<ActionGroup> res = new ArrayList<>();
-
-        ActionGroup group = new ActionGroup(path);
-        res.add(group);
-        if (actions == null || actions.size() == 0) {
-            return res;
-        }
-
-        //First step
-        Action lastAction = actions.get(0);
-        if (lastAction instanceof MapToIndex) {
-            group.getCollectionActions().add((MapToIndex) lastAction);
-        } else {
-            group.getActions().add(lastAction);
-        }
-
-        List<AtlasPath.SegmentContext> contexts = path.getCollectionSegments(true);
-
-        // Process the rest
-        for (int i = 1; i < actions.size(); i++) {
-            Action action = actions.get(i);
-            /*
-             * Check if we are starting a new group.
-             * This can either be: a MapToIndex while the previous action is a normal one
-             * or a MapToIndex to the same (or a previos) segment as the one targetted by the previous MapToIndex.
-             */
-            if (action instanceof MapToIndex) {
-                MapToIndex mapAction = (MapToIndex) action;
-                boolean isNewGroup = !(lastAction instanceof MapToIndex);
-                if (lastAction instanceof MapToIndex) {
-                    MapToIndex lastMapAction = (MapToIndex) lastAction;
-                    int lastSegmentIndex = IntStream.range(0, contexts.size()).filter(j -> contexts.get(j).getName().equalsIgnoreCase(lastMapAction.getCollectionName())).findFirst().orElse(-1);
-                    isNewGroup |= IntStream.range(0, contexts.size()).filter(j -> contexts.get(j).getName().equalsIgnoreCase(mapAction.getCollectionName())).findFirst().orElse(-1) <= lastSegmentIndex;
-                }
-                if (isNewGroup) {
-                    group = new ActionGroup(path);
-                    res.add(group);
-                }
-                group.getCollectionActions().add(mapAction);
-            } else {
-                group.getActions().add(action);
-            }
-            lastAction = action;
-        }
-
-        return res;
-    }
-
     private void addTargetCollectionElements(Field targetField, AtlasPath path, FieldGroup targetFieldGroup, AtlasInternalSession session) throws AtlasException {
-        List<ActionGroup> groups = extractActionGroups(path,session.head().getTargetField().getActions() );
+        List<ActionGroup> groups = ActionGroup.identifyActionGroups(session.head().getTargetField());
 
-        /* Iterate on the path.
-           For each segment check if there is an action group defined.
-           If yes, iterate up to max index and add padding elements where the action group is not defined.
-           If not do nothing (should not happen)
-         */
-        List<AtlasPath.SegmentContext> segments = path.getCollectionSegments(true);
-        for (int s = 0; s < segments.size(); s++) {
-            AtlasPath.SegmentContext segment = segments.get(s);
-            // Sort by segment
-            TreeMap<Integer, List<ActionGroup>> orderedGroups = groups.stream()
-                .collect(groupingBy(a -> a.getTargetCollectionIndexBySegment(segment.getName()), TreeMap::new, toList()));
-            int max = orderedGroups.lastKey();
+        for (ActionGroup g : groups) {
+            LOG.debug("Handling action group:{}", g.toPath());
 
-            for (int i = 0; i <= max; i++) {
-                List<ActionGroup> groupsByIndex = orderedGroups.get(i);
-                if (groupsByIndex == null) { // Add padding
-                    JsonField targetSubField = new JsonField();
-                    AtlasJsonModelFactory.copyField(targetField, targetSubField, false);
-                    AtlasPath tempPath = new AtlasPath(segments.subList(0, segments.indexOf(segment) + 1));
-                   // tempPath.setCollectionIndex(tempPath.getSegments(true).size()-1,0);
-                    targetSubField.setPath(tempPath.toString());
-                    targetFieldGroup.getField().add(targetSubField);
-                    session.head().setTargetField(targetSubField);
-                    LOG.info("Added padding :{}", tempPath.toString());
-                } else if (s == segments.size() - 1) { // If we are at the last segment, map the fields that need to
-                    for (ActionGroup g : groupsByIndex) {
-                        LOG.info("Handling actiongroup:{}", g.toPath());
-
-                        JsonField targetSubField = new JsonField();
-                        AtlasJsonModelFactory.copyField(targetField, targetSubField, false);
-                        targetSubField.setPath(g.toPath());
-                        targetFieldGroup.getField().add(targetSubField);
-                        session.head().setTargetField(targetSubField);
-                        super.populateTargetField(session);// It should be done only for groups and not for paddings
-                    }
-                }
-            }
+            JsonField targetSubField = new JsonField();
+            AtlasJsonModelFactory.copyField(targetField, targetSubField, false);
+            targetSubField.setPath(g.toPath());
+            targetFieldGroup.getField().add(targetSubField);
+            session.head().setTargetField(targetSubField);
+            super.populateTargetField(session);
         }
 
         session.head().setTargetField(targetFieldGroup);

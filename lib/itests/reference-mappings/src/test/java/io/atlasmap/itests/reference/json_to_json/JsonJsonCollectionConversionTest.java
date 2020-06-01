@@ -146,7 +146,6 @@ public class JsonJsonCollectionConversionTest extends AtlasMappingBaseTest {
     }
 
     @Test
-    /// Test a single collection
     public void testProcessCollectionFromNonCollectionByIndex() throws Exception {
         AtlasContext context = atlasContextFactory.createContext(
             new File("src/test/resources/jsonToJson/atlasmapping-collection-from-noncollection.json").toURI());
@@ -156,8 +155,8 @@ public class JsonJsonCollectionConversionTest extends AtlasMappingBaseTest {
 
         ArrayList<Action> actions = new ArrayList<>();
         addMappings(session,new MapToIndex(1,"contact"),new MapToIndex(3,"contact"));
-        //contact<1>
-        //contact<3>
+        // contact.firstName -> contact<1>.name
+        // contact.firstName -> contact<3>.name
 
         session.setDefaultSourceDocument(input);
         context.process(session);
@@ -199,9 +198,9 @@ public class JsonJsonCollectionConversionTest extends AtlasMappingBaseTest {
 
         String input = "{ \"contact\": { \"firstName\": \"name9\" } }";
         AtlasSession session = context.createSession();
-        //contact<>/foreigner<1>
-        //contact<0>/foreigner<0>
         addMappings(session,new MapToIndex(1,"foreigner"),new MapToIndex(0,"contact"),new MapToIndex(0,"foreigner"));
+        // contact.firstName -> contact<>/foreigner<1>.name
+        // contact.firstName -> contact<0>/foreigner<0>.name
 
         session.setDefaultSourceDocument(input);
         context.process(session);
@@ -222,10 +221,10 @@ public class JsonJsonCollectionConversionTest extends AtlasMappingBaseTest {
 
         String input = "{ \"contact\": { \"firstName\": \"name9\" } }";
         AtlasSession session = context.createSession();
-        //contact<1>/foreigner<1>
-        //contact<1>/foreigner<2>
-        //contact<2>/foreigner<>
         addMappings(session,new MapToIndex(1,"contact"),new MapToIndex(1,"foreigner"),new MapToIndex(1,"contact"),new MapToIndex(2,"foreigner"),new MapToIndex(2,"contact"));
+        // contact.firstName -> contact<1>/foreigner<1>.name
+        // contact.firstName -> contact<1>/foreigner<2>.name
+        // contact.firstName -> contact<2>/foreigner<>.name
 
         session.setDefaultSourceDocument(input);
         context.process(session);
