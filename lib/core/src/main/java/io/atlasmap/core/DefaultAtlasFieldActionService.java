@@ -536,6 +536,7 @@ public class DefaultAtlasFieldActionService implements AtlasFieldActionService {
                 throw new AtlasException("The class name and method name must be specified for custom FieldAction: " + customAction.getName());
             }
         }
+
         List<ActionProcessor> matches = new ArrayList<>();
         Lock readLock = actionProcessorsLock.readLock();
         try {
@@ -640,8 +641,7 @@ public class DefaultAtlasFieldActionService implements AtlasFieldActionService {
 
     @Override
     public Field processActions(AtlasInternalSession session, Field field) throws AtlasException {
-        //Exclude the FieldContainerActions since there are no processors associated
-        List<Action> actions = field.getActions().stream().filter(a->!(a instanceof CollectionAction)).collect(Collectors.toList());
+        List<Action> actions = field.getActions();
         FieldType targetType = field.getFieldType();
 
         if (actions == null || actions == null || actions.isEmpty()) {
