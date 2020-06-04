@@ -13,11 +13,15 @@ import java.util.regex.Pattern;
 
 public class TestHelper {
 
-    static void addMappings(AtlasSession session, Action... mappings) {
-        addMappings(((Mapping) session.getMapping().getMappings().getMapping().get(0)).getOutputField().get(0), mappings);
+    static void addOutputMappings(AtlasSession session, Action... mappings) {
+        addOutputMappings(((Mapping) session.getMapping().getMappings().getMapping().get(0)).getOutputField().get(0), mappings);
     }
 
-    static void addMappings(Field f, Action... mappings) {
+    static void addInputMappings(AtlasSession session, Action... mappings) {
+        addOutputMappings(((Mapping) session.getMapping().getMappings().getMapping().get(0)).getInputField().get(0), mappings);
+    }
+
+    static void addOutputMappings(Field f, Action... mappings) {
         ArrayList<Action> l = new ArrayList<>();
         for (Action m : mappings) {
             l.add(m);

@@ -36,7 +36,7 @@ public class JsonJsonMapToNestedCollectionIndexTest extends AtlasMappingBaseTest
     // contact.firstName -> contact<>/foreigner<1>.name
     public void testProcessNestedCollectionFromNonCollectionByIndex() throws Exception {
 
-        TestHelper.addMappings(session, new MapToIndex(1, "foreigner"));
+        TestHelper.addOutputMappings(session, new MapToIndex(1, "foreigner"));
 
         session.setDefaultSourceDocument(input);
         context.process(session);
@@ -54,7 +54,7 @@ public class JsonJsonMapToNestedCollectionIndexTest extends AtlasMappingBaseTest
     // contact.firstName -> contact<0>/foreigner<0>.name
     public void testProcessNestedCollectionFromNonCollectionByIndex_1() throws Exception {
 
-        TestHelper.addMappings(session, new MapToIndex(1, "foreigner"), new MapToIndex(0, "contact"), new MapToIndex(0, "foreigner"));
+        TestHelper.addOutputMappings(session, new MapToIndex(1, "foreigner"), new MapToIndex(0, "contact"), new MapToIndex(0, "foreigner"));
 
         session.setDefaultSourceDocument(input);
         context.process(session);
@@ -73,7 +73,7 @@ public class JsonJsonMapToNestedCollectionIndexTest extends AtlasMappingBaseTest
     // contact.firstName -> contact<2>/foreigner<>.name
     public void testProcessNestedCollectionFromNonCollectionByIndex_2() throws Exception {
 
-        TestHelper.addMappings(session, new MapToIndex(1, "contact"), new MapToIndex(1, "foreigner"), new MapToIndex(1, "contact"), new MapToIndex(2, "foreigner"), new MapToIndex(2, "contact"));
+        TestHelper.addOutputMappings(session, new MapToIndex(1, "contact"), new MapToIndex(1, "foreigner"), new MapToIndex(1, "contact"), new MapToIndex(2, "foreigner"), new MapToIndex(2, "contact"));
 
         session.setDefaultSourceDocument(input);
         context.process(session);
@@ -93,8 +93,8 @@ public class JsonJsonMapToNestedCollectionIndexTest extends AtlasMappingBaseTest
 
         JsonField outField1 = TestHelper.addOutputStringField(session, "/contact<>/other<>/name");
 
-        TestHelper.addMappings(outField0, new MapToIndex(0, "foreigner"));
-        TestHelper.addMappings(outField1, new MapToIndex(1, "other"));
+        TestHelper.addOutputMappings(outField0, new MapToIndex(0, "foreigner"));
+        TestHelper.addOutputMappings(outField1, new MapToIndex(1, "other"));
 
         session.setDefaultSourceDocument(input);
         context.process(session);
@@ -115,8 +115,8 @@ public class JsonJsonMapToNestedCollectionIndexTest extends AtlasMappingBaseTest
 
         JsonField outField1 = TestHelper.addOutputStringField(session, "/contact<>/other<>/name");
 
-        TestHelper.addMappings(outField0, new MapToIndex(1, "contact"), new MapToIndex(0, "foreigner"));
-        TestHelper.addMappings(outField1, new MapToIndex(0, "contact"), new MapToIndex(1, "other"));
+        TestHelper.addOutputMappings(outField0, new MapToIndex(1, "contact"), new MapToIndex(0, "foreigner"));
+        TestHelper.addOutputMappings(outField1, new MapToIndex(0, "contact"), new MapToIndex(1, "other"));
 
         session.setDefaultSourceDocument(input);
         context.process(session);
@@ -137,8 +137,8 @@ public class JsonJsonMapToNestedCollectionIndexTest extends AtlasMappingBaseTest
 
         JsonField outField1 = TestHelper.addOutputStringField(session, "/contact<>/foreigner<>/other<>/name");
 
-        TestHelper.addMappings(outField0, new MapToIndex(0, "contact"), new MapToIndex(0, "foreigner"));
-        TestHelper.addMappings(outField1, new MapToIndex(0, "contact"), new MapToIndex(1, "foreigner"), new MapToIndex(0, "other"));
+        TestHelper.addOutputMappings(outField0, new MapToIndex(0, "contact"), new MapToIndex(0, "foreigner"));
+        TestHelper.addOutputMappings(outField1, new MapToIndex(0, "contact"), new MapToIndex(1, "foreigner"), new MapToIndex(0, "other"));
 
         session.setDefaultSourceDocument(input);
         context.process(session);
