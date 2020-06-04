@@ -1,6 +1,5 @@
-package io.atlasmap.json.module;
+package io.atlasmap.core;
 
-import io.atlasmap.core.AtlasPath;
 import io.atlasmap.v2.Action;
 import io.atlasmap.v2.Field;
 import io.atlasmap.v2.MapToIndex;
@@ -15,7 +14,7 @@ import java.util.stream.IntStream;
  * A given field can map to multiple target elements in case its mapping actions contain some CollectionActions.
  * For each target element (identified by a unique path) a specific set of mappings can be defined.
  */
-class ActionGroup {
+public class ActionGroup {
 
     private List<MapToIndex> collectionActions = new ArrayList<>();
     private List<Action> actions = new ArrayList<>();

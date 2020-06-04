@@ -17,6 +17,7 @@ package io.atlasmap.json.module;
 
 import java.util.*;
 
+import io.atlasmap.core.ActionGroup;
 import io.atlasmap.v2.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

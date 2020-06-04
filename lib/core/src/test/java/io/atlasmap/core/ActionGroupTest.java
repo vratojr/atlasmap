@@ -1,5 +1,6 @@
-package io.atlasmap.json.module;
+package io.atlasmap.core;
 
+import io.atlasmap.core.ActionGroup;
 import io.atlasmap.v2.*;
 import org.junit.Test;
 
