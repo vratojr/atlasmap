@@ -630,6 +630,9 @@ public class DefaultAtlasContext implements AtlasContext, AtlasContextMXBean {
             }
 
             module.readSourceValue(session);
+
+            List<ActionGroup> groups = ActionGroup.identifySourceActionGroups(session.head().getSourceField());
+
             Field processed = applyFieldActions(session, session.head().getSourceField());
             session.head().setSourceField(processed);
             sourceFields.set(i, processed);

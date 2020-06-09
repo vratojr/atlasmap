@@ -182,7 +182,7 @@ public class JsonModule extends BaseAtlasModule {
     }
 
     private void addTargetCollectionElements(Field targetField, AtlasPath path, FieldGroup targetFieldGroup, AtlasInternalSession session) throws AtlasException {
-        List<ActionGroup> groups = ActionGroup.identifyActionGroups(session.head().getTargetField());
+        List<ActionGroup> groups = ActionGroup.identifyTargetActionGroups(session.head().getTargetField());
 
         for (ActionGroup g : groups) {
             LOG.debug("Handling action group:{}", g.toPath());

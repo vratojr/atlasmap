@@ -1,8 +1,6 @@
 package io.atlasmap.core;
 
-import io.atlasmap.v2.Action;
-import io.atlasmap.v2.Field;
-import io.atlasmap.v2.MapToIndex;
+import io.atlasmap.v2.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,17 +8,25 @@ import java.util.stream.IntStream;
 
 /**
  * Contains the set of actions that should be applied on a given target path.
- *
+ * <p>
  * A given field can map to multiple target elements in case its mapping actions contain some CollectionActions.
  * For each target element (identified by a unique path) a specific set of mappings can be defined.
  */
 public class ActionGroup {
 
-    private List<MapToIndex> collectionActions = new ArrayList<>();
+    private List<CollectionAction> collectionActions = new ArrayList<>();
     private List<Action> actions = new ArrayList<>();
     private AtlasPath pathTemplate;
 
-    public static List<ActionGroup> identifyActionGroups(Field field) {
+    public static List<ActionGroup> identifyTargetActionGroups(Field field) {
+        return identifyTargetActionGroups(field, MapToIndex.class);
+    }
+
+    public static List<ActionGroup> identifySourceActionGroups(Field field) {
+        return identifyTargetActionGroups(field, MapFromIndex.class);
+    }
+
+    private static <T extends CollectionAction> List<ActionGroup> identifyTargetActionGroups(Field field, Class<T> clazz) {
         AtlasPath path = new AtlasPath(field.getPath());
         List<Action> actions = field.getActions();
 
@@ -34,8 +40,8 @@ public class ActionGroup {
 
         //First step
         Action lastAction = actions.get(0);
-        if (lastAction instanceof MapToIndex) {
-            group.addCollectionAction((MapToIndex) lastAction);
+        if (clazz.isAssignableFrom(lastAction.getClass())) {
+            group.addCollectionAction((T) lastAction);
         } else {
             group.addAction(lastAction);
         }
@@ -51,10 +57,10 @@ public class ActionGroup {
              * or a MapToIndex to the same (or a previous) segment as the one targetted by the previous MapToIndex.
              */
             if (action instanceof MapToIndex) {
-                MapToIndex mapAction = (MapToIndex) action;
-                boolean isNewGroup = !(lastAction instanceof MapToIndex);
+                CollectionAction mapAction = (T) action;
+                boolean isNewGroup = !clazz.isAssignableFrom(lastAction.getClass());
                 if (lastAction instanceof MapToIndex) {
-                    MapToIndex lastMapAction = (MapToIndex) lastAction;
+                    CollectionAction lastMapAction = (T) lastAction;
                     int lastSegmentIndex = IntStream.range(0, contexts.size()).filter(j -> contexts.get(j).getName().equalsIgnoreCase(lastMapAction.getCollectionName())).findFirst().orElse(-1);
                     isNewGroup |= IntStream.range(0, contexts.size()).filter(j -> contexts.get(j).getName().equalsIgnoreCase(mapAction.getCollectionName())).findFirst().orElse(-1) <= lastSegmentIndex;
                 }
@@ -79,7 +85,7 @@ public class ActionGroup {
         List<AtlasPath.SegmentContext> segments = pathTemplate.getSegments(true);
         for (AtlasPath.SegmentContext segment : segments) {
             int segmentIndex = segments.indexOf(segment);
-            MapToIndex indexAction = collectionActions.stream().filter(n -> n.getCollectionName().equalsIgnoreCase(segment.getName())).findFirst().orElse(null);
+            CollectionAction indexAction = collectionActions.stream().filter(n -> n.getCollectionName().equalsIgnoreCase(segment.getName())).findFirst().orElse(null);
             if (indexAction == null) {
                 pathTemplate.setCollectionIndex(segmentIndex, 0);
             } else {
@@ -97,7 +103,7 @@ public class ActionGroup {
         this.pathTemplate = pathTemplate;
     }
 
-    private void addCollectionAction(MapToIndex a) {
+    private void addCollectionAction(CollectionAction a) {
         this.collectionActions.add(a);
     }
 

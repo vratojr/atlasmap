@@ -19,14 +19,14 @@ public class JsonJsonMapFromCollectionIndexTest extends AtlasMappingBaseTest {
         AtlasContext context = atlasContextFactory.createContext(
             new File("src/test/resources/jsonToJson/atlasmapping-empty-mapping.json").toURI());
 
-        String input = "{ \"contact\": [{ \"name\": \"name0\" },{ \"name\": \"name1\" }] }";
+        String input = "{ \"level0\": [{ \"name\": \"name0\" },{ \"name\": \"name1\" }] }";
         AtlasSession session = context.createSession();
 
         // Output field
-        TestHelper.addInputStringField(session, "/contact<>/name");
+        TestHelper.addInputStringField(session, "/level0<>/name");
         TestHelper.addOutputStringField(session, "/contact/firstName");
 
-        TestHelper.addInputMappings(session,new MapFromIndex(1,"contact"));
+        TestHelper.addInputMappings(session,new MapFromIndex(1,"level0"));
 
         session.setDefaultSourceDocument(input);
         context.process(session);
@@ -35,7 +35,33 @@ public class JsonJsonMapFromCollectionIndexTest extends AtlasMappingBaseTest {
         assertNotNull(object);
         assertTrue(object instanceof String);
 
-        String output = "{\"contact\":{\"firstName\":\"name1#name2\"}}]}";
+        String output = "{\"contact\":{\"firstName\":\"name1\"}}]}";
+        assertEquals(output, object);
+    }
+
+    @Test
+    // level0<1>/level1<1>.name -> contact.firstName
+    public void testProcessNonCollectionFromNestedCollectionByIndex() throws Exception {
+        AtlasContext context = atlasContextFactory.createContext(
+            new File("src/test/resources/jsonToJson/atlasmapping-empty-mapping.json").toURI());
+
+        String input = "{ \"level0\": [{\"name\": \"name00\"},{ \"level1\": [{\"name\": \"name10\"},{ \"name\": \"name11\" }]}] }";
+        AtlasSession session = context.createSession();
+
+        // Output field
+        TestHelper.addInputStringField(session, "/level0<>/level1<>/name");
+        TestHelper.addOutputStringField(session, "/contact/firstName");
+
+        TestHelper.addInputMappings(session,new MapFromIndex(1,"level0"),new MapFromIndex(1,"level1"));
+
+        session.setDefaultSourceDocument(input);
+        context.process(session);
+
+        Object object = session.getDefaultTargetDocument();
+        assertNotNull(object);
+        assertTrue(object instanceof String);
+
+        String output = "{\"contact\":{\"firstName\":\"name11\"}}]}";
         assertEquals(output, object);
     }
 

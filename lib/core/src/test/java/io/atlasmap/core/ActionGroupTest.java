@@ -1,6 +1,5 @@
 package io.atlasmap.core;
 
-import io.atlasmap.core.ActionGroup;
 import io.atlasmap.v2.*;
 import org.junit.Test;
 
@@ -18,7 +17,7 @@ public class ActionGroupTest {
         f.setActions(createActions(new Add()));
         f.setPath("/contact<>/name");
 
-        List<ActionGroup> group = ActionGroup.identifyActionGroups(f);
+        List<ActionGroup> group = ActionGroup.identifyTargetActionGroups(f);
         assertEquals(1, group.size());
         assertEquals("By default, for an array, we map to element 0", "/contact<0>/name", group.get(0).toPath());
     }
@@ -29,7 +28,7 @@ public class ActionGroupTest {
         f.setActions(createActions(new MapToIndex(1, "contact")));
         f.setPath("/contact<>/name");
 
-        List<ActionGroup> group = ActionGroup.identifyActionGroups(f);
+        List<ActionGroup> group = ActionGroup.identifyTargetActionGroups(f);
         assertEquals(1, group.size());
         assertEquals("/contact<1>/name", group.get(0).toPath());
     }
@@ -40,7 +39,7 @@ public class ActionGroupTest {
         f.setActions(createActions(new MapToIndex(1, "contact"), new MapToIndex(1, "foreigner")));
         f.setPath("/contact<>/foreigner<>/name");
 
-        List<ActionGroup> group = ActionGroup.identifyActionGroups(f);
+        List<ActionGroup> group = ActionGroup.identifyTargetActionGroups(f);
         assertEquals(1, group.size());
         assertEquals("/contact<1>/foreigner<1>/name", group.get(0).toPath());
     }
@@ -53,7 +52,7 @@ public class ActionGroupTest {
             new MapToIndex(1, "contact"))); // This is considered to be a mapping to a new element
         f.setPath("/contact<>/foreigner<>/name");
 
-        List<ActionGroup> group = ActionGroup.identifyActionGroups(f);
+        List<ActionGroup> group = ActionGroup.identifyTargetActionGroups(f);
         assertEquals(2, group.size());
         assertEquals("/contact<0>/foreigner<0>/name", group.get(0).toPath());
         assertEquals("/contact<1>/foreigner<0>/name", group.get(1).toPath());
@@ -65,7 +64,7 @@ public class ActionGroupTest {
         f.setActions(createActions(new MapToIndex(0, "contact"), new Add(), new MapToIndex(1, "contact"), new Append()));
         f.setPath("/contact<>/name");
 
-        List<ActionGroup> group = ActionGroup.identifyActionGroups(f);
+        List<ActionGroup> group = ActionGroup.identifyTargetActionGroups(f);
         assertEquals(2, group.size());
         assertEquals("/contact<0>/name", group.get(0).toPath());
         assertEquals(1, group.get(0).getActions().size());
@@ -81,7 +80,7 @@ public class ActionGroupTest {
         f.setActions(createActions(new MapToIndex(0, "contact"), new MapToIndex(1, "contact"), new Append()));
         f.setPath("/contact<>/name");
 
-        List<ActionGroup> group = ActionGroup.identifyActionGroups(f);
+        List<ActionGroup> group = ActionGroup.identifyTargetActionGroups(f);
         assertEquals(2, group.size());
         assertEquals("/contact<0>/name", group.get(0).toPath());
         assertEquals(0, group.get(0).getActions().size());
